@@ -1,0 +1,34 @@
+# Namespaces for the simulation.
+# istio-injection: enabled on all four — every long-running pod runs 2/2
+# (app + Envoy sidecar), and the ETL CronJobs carry an explicit
+# sidecar.istio.io/inject: 'false' opt-out, which only makes sense when
+# the namespace injects by default.
+# (elasticsearch-prod + kafka labels confirmed in deployments-core.yaml;
+#  rumah123portal-prod + core-prod inferred from the 2/2 sidecars.)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rumah123portal-prod
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: core-prod
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: elasticsearch-prod
+  labels:
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+  labels:
+    istio-injection: enabled

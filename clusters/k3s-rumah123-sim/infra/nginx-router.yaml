@@ -1,0 +1,103 @@
+# ConfigMap for nginx-router (nginx.conf).
+# The Deployment mounts this as /etc/nginx/nginx.conf (subPath).
+# The Deployment also references Secret `basic-auth` (mounted read-only at
+# /etc/nginx/auth) — that Secret is a REAL credential and is deliberately
+# NOT part of this package; it must already exist in the cluster.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-router
+  namespace: rumah123portal-prod
+data:
+  nginx.conf: |
+    events {
+      worker_connections 1024;
+    }
+
+    http {
+      access_log /dev/stdout;
+
+      server {
+        listen 80;
+
+        auth_basic "Rumah123 Sim";
+        auth_basic_user_file /etc/nginx/auth/.htpasswd;
+
+        location /api/ {
+          proxy_pass http://api:8080/;
+          proxy_set_header Host $host;
+        }
+
+        location /search {
+          proxy_pass http://search:8080/;
+        }
+
+        location /property {
+          proxy_pass http://property:8080/;
+        }
+
+        location /static-pages {
+          proxy_pass http://static-pages:8080/;
+        }
+
+        location /customerweb {
+          proxy_pass http://customerweb:8080/;
+        }
+
+        location / {
+          proxy_pass http://home:8080/;
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-router
+  namespace: rumah123portal-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-router
+  template:
+    metadata:
+      labels:
+        app: nginx-router
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: auth
+          mountPath: /etc/nginx/auth
+          readOnly: true
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      volumes:
+      - name: conf
+        configMap:
+          name: nginx-router
+      - name: auth
+        secret:
+          secretName: basic-auth
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-router
+  namespace: rumah123portal-prod
+spec:
+  selector:
+    app: nginx-router
+  ports:
+  - port: 80
+    targetPort: 80

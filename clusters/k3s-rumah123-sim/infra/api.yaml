@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: rumah123portal-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: python:3.12-slim
+        command: ["python", "-u", "/app/stub.py"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SERVICE_NAME
+          value: "api"
+        - name: NAMESPACE
+          value: "rumah123portal-prod"
+        - name: UPSTREAMS
+          value: "graphql.core-prod.svc.cluster.local:8080"
+        - name: UPSTREAM_PATH
+          value: "/graphql"
+        volumeMounts:
+        - name: stub
+          mountPath: /app
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      volumes:
+      - name: stub
+        configMap:
+          name: stub
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: rumah123portal-prod
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 8080
+    targetPort: 8080

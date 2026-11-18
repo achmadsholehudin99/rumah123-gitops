@@ -1,0 +1,34 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: rumah123portal
+  namespace: rumah123portal-prod
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - rumah123.local
+    - prod.core.rumah123.local
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: main-vs
+  namespace: rumah123portal-prod
+spec:
+  hosts:
+  - rumah123.local
+  - prod.core.rumah123.local
+  gateways:
+  - rumah123portal
+  http:
+  - route:
+    - destination:
+        host: nginx-router.rumah123portal-prod.svc.cluster.local
+        port:
+          number: 80

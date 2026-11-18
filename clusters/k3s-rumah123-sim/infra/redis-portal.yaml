@@ -1,0 +1,86 @@
+# redis-cache + redis-session in namespace rumah123portal-prod.
+# *** RECONSTRUCTED BY ANALOGY — READ BEFORE APPLYING ***
+# No source YAML exists for these two: the README only states they are
+# redis:7-alpine with Services redis-cache / redis-session, and nothing in
+# manifests/ defines them (they were created imperatively). These manifests
+# are modeled exactly on the core `redis` Deployment/Service (same image,
+# same args, same port 6379, same tcpSocket readiness probe), with only
+# name/namespace/selector changed. Verify after apply that the pods come
+# up 2/2 and that search/property behave as before.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-cache
+  namespace: rumah123portal-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cache
+  template:
+    metadata:
+      labels:
+        app: redis-cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        args: ["redis-server", "--save", "", "--appendonly", "no"]
+        ports:
+        - containerPort: 6379
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 2
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cache
+  namespace: rumah123portal-prod
+spec:
+  selector:
+    app: redis-cache
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-session
+  namespace: rumah123portal-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-session
+  template:
+    metadata:
+      labels:
+        app: redis-session
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        args: ["redis-server", "--save", "", "--appendonly", "no"]
+        ports:
+        - containerPort: 6379
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 2
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-session
+  namespace: rumah123portal-prod
+spec:
+  selector:
+    app: redis-session
+  ports:
+  - port: 6379
+    targetPort: 6379

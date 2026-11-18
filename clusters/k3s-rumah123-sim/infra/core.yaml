@@ -1,0 +1,281 @@
+# Core services (namespace core-prod), plus the elasticsearch and
+# kafka stand-ins in their own namespaces.
+# NOTE: the 4 http-echo repositories (searchsuggestion, propertyrepository,
+# userrepository, enquiry) are intentionally NOT here — they become
+# HelmReleases in a later step; including them here would fight Helm for
+# ownership of the same Deployment/Service names.
+# NOTE: core-id-db uses POSTGRES_PASSWORD "simulasi" — a dummy value for
+# this simulation only, never a real credential.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graphql
+  namespace: core-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: graphql
+  template:
+    metadata:
+      labels:
+        app: graphql
+    spec:
+      containers:
+      - name: graphql
+        image: python:3.12-slim
+        command: ["python", "-u", "/app/stub.py"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SERVICE_NAME
+          value: "graphql"
+        - name: NAMESPACE
+          value: "core-prod"
+        - name: UPSTREAMS
+          value: "consumersiteauth:8080,searchsuggestion:8080,propertyrepository:8080,userrepository:8080,enquiry:8080"
+        - name: UPSTREAM_PATH
+          value: "/health"
+        volumeMounts:
+        - name: stub
+          mountPath: /app
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      volumes:
+      - name: stub
+        configMap:
+          name: stub
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: graphql
+  namespace: core-prod
+spec:
+  selector:
+    app: graphql
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumersiteauth
+  namespace: core-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consumersiteauth
+  template:
+    metadata:
+      labels:
+        app: consumersiteauth
+    spec:
+      containers:
+      - name: consumersiteauth
+        image: python:3.12-slim
+        command: ["python", "-u", "/app/stub.py"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SERVICE_NAME
+          value: "consumersiteauth"
+        - name: NAMESPACE
+          value: "core-prod"
+        - name: REDIS_HOST
+          value: "redis"
+        volumeMounts:
+        - name: stub
+          mountPath: /app
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 5
+      volumes:
+      - name: stub
+        configMap:
+          name: stub
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consumersiteauth
+  namespace: core-prod
+spec:
+  selector:
+    app: consumersiteauth
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: core-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        args: ["redis-server", "--save", "", "--appendonly", "no"]
+        ports:
+        - containerPort: 6379
+        readinessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 2
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: core-prod
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core-id-db
+  namespace: core-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: core-id-db
+  template:
+    metadata:
+      labels:
+        app: core-id-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        env:
+        - name: POSTGRES_USER
+          value: "rumah123"
+        - name: POSTGRES_PASSWORD
+          value: "simulasi"
+        - name: POSTGRES_DB
+          value: "core_id_db"
+        ports:
+        - containerPort: 5432
+        readinessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: core-id-db
+  namespace: core-prod
+spec:
+  selector:
+    app: core-id-db
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch
+  namespace: elasticsearch-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: http-echo
+        image: hashicorp/http-echo:latest
+        args: ["-listen=:8080", '-text={"service":"elasticsearch","namespace":"elasticsearch-prod","status":"ok"}']
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 2
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: elasticsearch-prod
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: http-echo
+        image: hashicorp/http-echo:latest
+        args: ["-listen=:8080", '-text={"service":"kafka","namespace":"kafka","status":"ok"}']
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 2
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: kafka
+spec:
+  selector:
+    app: kafka
+  ports:
+  - port: 8080
+    targetPort: 8080

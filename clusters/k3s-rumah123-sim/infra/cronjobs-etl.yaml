@@ -1,0 +1,368 @@
+# ConfigMap `etl` in namespace core-prod.
+# All 10 ETL CronJobs mount this ConfigMap at /scripts and run
+# `python /scripts/etl.py <label> <url>`. Without this ConfigMap the
+# CronJob pods fail to start (missing volume).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etl
+  namespace: core-prod
+data:
+  etl.py: |
+    """Dipakai CronJob ETL simulasi: panggil satu URL, laporkan hasilnya.
+
+    Pakai: python /scripts/etl.py <label> <url|noop>
+    Contoh: python /scripts/etl.py pg-to-es http://elasticsearch.elasticsearch-prod.svc.cluster.local:8080/health
+    """
+    import sys
+    import urllib.request
+
+    label, url = sys.argv[1], sys.argv[2]
+    if url == "noop":
+        print(label + ": batch ok (stand-in, tanpa target HTTP)")
+        sys.exit(0)
+    try:
+        with urllib.request.urlopen(url, timeout=10) as r:
+            print(label + ": sync ok, HTTP " + str(r.status) + ", " + str(len(r.read())) + " bytes")
+    except Exception as e:
+        print(label + ": sync FAILED: " + str(e)[:200])
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-to-es
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - pg-to-es
+            - http://elasticsearch.elasticsearch-prod.svc.cluster.local:8080/health
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-to-es-listing
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - pg-to-es-listing
+            - http://elasticsearch.elasticsearch-prod.svc.cluster.local:8080/health
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-to-es-property
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - pg-to-es-property
+            - http://elasticsearch.elasticsearch-prod.svc.cluster.local:8080/health
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: datamapperloader
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - datamapperloader
+            - http://graphql.core-prod.svc.cluster.local:8080/graphql
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: datamapperloader-user
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - datamapperloader-user
+            - http://graphql.core-prod.svc.cluster.local:8080/graphql
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: diamondloader
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - diamondloader
+            - http://graphql.core-prod.svc.cluster.local:8080/graphql
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ipropsuggestionloader
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - ipropsuggestionloader
+            - http://graphql.core-prod.svc.cluster.local:8080/graphql
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: propertyaggregator
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - propertyaggregator
+            - http://graphql.core-prod.svc.cluster.local:8080/graphql
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: eventcoresync
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - eventcoresync
+            - http://kafka.kafka.svc.cluster.local:8080/health
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-adapter
+  namespace: core-prod
+spec:
+  schedule: '*/10 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: 'false'
+        spec:
+          containers:
+          - name: etl
+            image: python:3.12-slim
+            command:
+            - python
+            - /scripts/etl.py
+            - db-adapter
+            - noop
+            volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+          volumes:
+          - name: scripts
+            configMap:
+              name: etl
+          restartPolicy: OnFailure
