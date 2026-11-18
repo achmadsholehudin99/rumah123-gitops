@@ -1,0 +1,42 @@
+env:
+  name: sim
+gitRepo:
+  name: rumah123-gitops
+replicaCount: 1
+
+autoscaling:
+  enabled: false
+
+image:
+  repository: hashicorp/http-echo
+  tag: latest
+  pullPolicy: IfNotPresent
+  imagePullSecrets: []
+
+args:
+  - "-listen=:8080"
+  - '-text={"service":"home","namespace":"rumah123portal-prod","status":"ok"}'
+
+service:
+  type: ClusterIP
+  srcPort: 8080
+  dstPort: 8080
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 8080
+  initialDelaySeconds: 2
+  periodSeconds: 5
+
+configmap:
+  enabled: false
+volumeMounts: []
+volumes: []
+
+virtualService:
+  enabled: false
+destinationRule:
+  enabled: false
+hpaAnnotations:
+  enabled: false
