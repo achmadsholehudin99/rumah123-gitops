@@ -14,6 +14,15 @@ spec:
     hosts:
     - rumah123.local
     - prod.core.rumah123.local
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: istio-origin-cert
+    hosts:
+    - rumah123.dmg-dev.my.id
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -24,6 +33,7 @@ spec:
   hosts:
   - rumah123.local
   - prod.core.rumah123.local
+  - rumah123.dmg-dev.my.id
   gateways:
   - rumah123portal
   http:
