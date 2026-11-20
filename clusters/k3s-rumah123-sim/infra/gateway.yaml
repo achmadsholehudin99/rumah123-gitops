@@ -12,7 +12,7 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - test1.dmg-dev.my.id
+    - test1.k3s.dmg-dev.my.id
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -21,7 +21,7 @@ metadata:
   namespace: rumah123portal-prod
 spec:
   hosts:
-  - test1.dmg-dev.my.id
+  - test1.k3s.dmg-dev.my.id
   gateways:
   - rumah123portal
   http:
