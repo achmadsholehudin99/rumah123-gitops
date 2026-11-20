@@ -16,7 +16,7 @@ spec:
       containers:
       - name: search
         image: hashicorp/http-echo:latest
-        args: ["-listen=:8080", "-text=search success!"]
+        args: ["-listen=:8080", "-text=PAGE SEARCH SUCCESS!"]
         ports:
         - containerPort: 8080
         resources:

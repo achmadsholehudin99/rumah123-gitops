@@ -20,7 +20,7 @@ spec:
         image: hashicorp/http-echo:latest
         args:
         - -listen=:8080
-        - -text=home
+        - -text=PAGE HOME SUCCESS!
         ports:
         - containerPort: 8080
         resources:
