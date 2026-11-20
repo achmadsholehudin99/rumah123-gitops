@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home
+  namespace: rumah123portal-prod
+  labels:
+    app: home
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: home
+  template:
+    metadata:
+      labels:
+        app: home
+    spec:
+      containers:
+      - name: home
+        image: hashicorp/http-echo:latest
+        args:
+        - -listen=:8080
+        - -text=home
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 40m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080

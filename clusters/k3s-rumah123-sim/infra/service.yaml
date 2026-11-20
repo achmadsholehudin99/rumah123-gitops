@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: home
+  namespace: rumah123portal-prod
+  labels:
+    app: home
+spec:
+  type: ClusterIP
+  selector:
+    app: home
+  ports:
+  - port: 8080
+    targetPort: 8080
